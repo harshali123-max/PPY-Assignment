@@ -3,7 +3,7 @@
 In this repository I provided PPY Internship Assignment
 =======
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
+![img_alt]https://github.com/harshali123-max/PPY-Assignment/blob/4f799bda65eb9a21f125580a22009cc339dac37b/Screenshot%20(1104).png
 ## Getting Started
 
 First, run the development server:
