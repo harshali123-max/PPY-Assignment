@@ -1,5 +1,8 @@
 "use client";
 import React from "react";
+import jsPDF from "jspdf";
+import { toPng } from "html-to-image";
+import html2pdf from "html2pdf.js";
 import { Search, Bell, Star, Settings, LogOut, CircleHelp, Download, ChevronRight, ChevronDown, TrendingUp, Wallet, XOctagon, Handshake, BarChart3, Users, Menu } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -84,8 +87,53 @@ function ClientsBubble() {
   );
 }
 
+function ExportPDFButton({ targetId }: { targetId: string }) {
+  const handleDownload = async () => {
+  const element = document.getElementById("dashboard-to-pdf");
+  if (!element) return;
 
+  try {
+    const dataUrl = await toPng(element, {
+      cacheBust: true,
+      canvasWidth: element.scrollWidth,
+      canvasHeight: element.scrollHeight,
+    });
 
+    const pdf = new jsPDF("p", "pt", "a4");
+    const imgProps = pdf.getImageProperties(dataUrl);
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    let heightLeft = pdfHeight;
+    let position = 0;
+
+    // Add first page
+    pdf.addImage(dataUrl, "PNG", 0, position, pdfWidth, pdfHeight);
+    heightLeft -= pdf.internal.pageSize.getHeight();
+
+    // Add more pages if needed
+    while (heightLeft > 0) {
+      position = heightLeft - pdfHeight;
+      pdf.addPage();
+      pdf.addImage(dataUrl, "PNG", 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pdf.internal.pageSize.getHeight();
+    }
+
+    pdf.save("dashboard.pdf");
+  } catch (err) {
+    console.error("Error generating PDF:", err);
+  }
+};
+return (
+    <button
+      onClick={handleDownload}
+      className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+    >
+      Download PDF
+    </button>
+  );
+}
 
 function TopNav() {
   return (
@@ -173,10 +221,18 @@ function SmallMetric({ icon: Icon, title }) {
 export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <div className="max-w-[1200px] mx-auto">
+      {/* Dashboard container for PDF */}
+      <div className="max-w-[1200px] mx-auto" id="dashboard-to-pdf">
+        
+        {/* PDF Export Button */}
+        <div className="flex justify-end mb-2">
+          <ExportPDFButton targetId="dashboard-to-pdf" />
+        </div>
+        <div id="dashboard-to-pdf">
+        {/* Your existing components */}
         <TopNav />
         <RedMenuBar />
-
+        </div>
         {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           <KPIBlock title="AUM" value="AUM 12.19" unit="Cr" subtext="+0.77% MoM" />
@@ -194,11 +250,10 @@ export default function Dashboard() {
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
-          {/* Clients bubble chart */}
           <Card>
             <CardHeader title="CLIENTS" right={<MutedBtn>Download Report</MutedBtn>} />
             <div className="h-[280px] px-3 pb-4">
-              <ClientsBubble/>
+              <ClientsBubble />
               <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-amber-500"/> Online</div>
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-orange-600"/> New</div>
@@ -208,17 +263,15 @@ export default function Dashboard() {
             </div>
           </Card>
 
-          {/* SIP Business Chart */}
           <Card>
             <CardHeader title="SIP BUSINESS CHART" right={<MutedBtn>View Report</MutedBtn>} />
             <div className="h-[280px] px-3 pb-4">
-                  <ComposedSIP />
+              <ComposedSIP />
             </div>
           </Card>
 
-
-          {/* Monthly MIS */}
-          <Card>
+          
+            <Card>
             <CardHeader title="MONTHLY MIS" right={<MutedBtn>View Report</MutedBtn>} />
             <div className="h-[280px] px-3 pb-4">
               <ResponsiveContainer width="100%" height="100%">
@@ -245,6 +298,7 @@ export default function Dashboard() {
                   <Area type="monotone" dataKey="a" name="Equity" stroke="#22c55e" fillOpacity={1} fill="url(#a)" />
                   <Area type="monotone" dataKey="b" name="Debt" stroke="#3b82f6" fillOpacity={1} fill="url(#b)" />
                   <Area type="monotone" dataKey="c" name="Hybrid" stroke="#ef4444" fillOpacity={1} fill="url(#c)" />
+                  {/* ...rest of AreaChart... */}
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -254,6 +308,7 @@ export default function Dashboard() {
     </div>
   );
 }
+
 
 function ComposedSIP() {
   return (
